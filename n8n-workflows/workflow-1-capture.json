@@ -1,0 +1,299 @@
+{
+  "name": "Plum - Workflow 1: Capture (Input Layer)",
+  "nodes": [
+    {
+      "parameters": {
+        "event": "message",
+        "channelId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "id": "slack-trigger",
+      "name": "Slack Trigger",
+      "type": "n8n-nodes-base.slackTrigger",
+      "typeVersion": 1,
+      "position": [220, 100],
+      "credentials": {
+        "slackApi": {
+          "id": "",
+          "name": "Slack Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [{ "mode": "everyMinute" }]
+        },
+        "filters": {
+          "readStatus": "unread",
+          "receivedAfter": ""
+        },
+        "options": {}
+      },
+      "id": "gmail-trigger",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1,
+      "position": [220, 300],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "",
+          "name": "Gmail Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "plum-escalation-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook (WhatsApp/Dashboard)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [220, 500],
+      "webhookId": "plum-escalation"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "raw_text",
+              "name": "raw_text",
+              "value": "={{ $json.text || $json.snippet || $json.body?.message || $json.message || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "source",
+              "name": "source",
+              "value": "={{ $input.first().json.channel ? 'Slack' : ($input.first().json.threadId ? 'Email' : 'WhatsApp') }}",
+              "type": "string"
+            },
+            {
+              "id": "sender_name",
+              "name": "sender_name",
+              "value": "={{ $json.user_name || $json.from?.emailAddress?.name || $json.body?.sender_name || 'Unknown' }}",
+              "type": "string"
+            },
+            {
+              "id": "sender_email",
+              "name": "sender_email",
+              "value": "={{ $json.user_email || $json.from?.emailAddress?.address || $json.body?.sender_email || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "normalize-slack",
+      "name": "Normalize Slack",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 100]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "raw_text",
+              "name": "raw_text",
+              "value": "={{ $json.subject + ' ' + $json.snippet }}",
+              "type": "string"
+            },
+            {
+              "id": "source",
+              "name": "source",
+              "value": "Email",
+              "type": "string"
+            },
+            {
+              "id": "sender_name",
+              "name": "sender_name",
+              "value": "={{ $json.from.emailAddress.name || 'Unknown' }}",
+              "type": "string"
+            },
+            {
+              "id": "sender_email",
+              "name": "sender_email",
+              "value": "={{ $json.from.emailAddress.address || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "normalize-email",
+      "name": "Normalize Email",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "raw_text",
+              "name": "raw_text",
+              "value": "={{ $json.body.message || $json.body.text || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "source",
+              "name": "source",
+              "value": "WhatsApp",
+              "type": "string"
+            },
+            {
+              "id": "sender_name",
+              "name": "sender_name",
+              "value": "={{ $json.body.sender_name || 'Unknown' }}",
+              "type": "string"
+            },
+            {
+              "id": "sender_email",
+              "name": "sender_email",
+              "value": "={{ $json.body.sender_email || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "id": "normalize-webhook",
+      "name": "Normalize Webhook",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 500]
+    },
+    {
+      "parameters": {},
+      "id": "merge-all",
+      "name": "Merge All Sources",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false },
+          "combinator": "or",
+          "conditions": [
+            {
+              "leftValue": "={{ $json.raw_text }}",
+              "rightValue": "urgent",
+              "operator": { "type": "string", "operation": "contains" }
+            },
+            {
+              "leftValue": "={{ $json.raw_text }}",
+              "rightValue": "escalation",
+              "operator": { "type": "string", "operation": "contains" }
+            },
+            {
+              "leftValue": "={{ $json.raw_text }}",
+              "rightValue": "escalate",
+              "operator": { "type": "string", "operation": "contains" }
+            },
+            {
+              "leftValue": "={{ $json.raw_text }}",
+              "rightValue": "issue",
+              "operator": { "type": "string", "operation": "contains" }
+            },
+            {
+              "leftValue": "={{ $json.raw_text }}",
+              "rightValue": "claim stuck",
+              "operator": { "type": "string", "operation": "contains" }
+            },
+            {
+              "leftValue": "={{ $json.raw_text }}",
+              "rightValue": "not resolved",
+              "operator": { "type": "string", "operation": "contains" }
+            },
+            {
+              "leftValue": "={{ $json.raw_text }}",
+              "rightValue": "disappointed",
+              "operator": { "type": "string", "operation": "contains" }
+            },
+            {
+              "leftValue": "={{ $json.raw_text }}",
+              "rightValue": "pending",
+              "operator": { "type": "string", "operation": "contains" }
+            },
+            {
+              "leftValue": "={{ $json.raw_text }}",
+              "rightValue": "blocked",
+              "operator": { "type": "string", "operation": "contains" }
+            },
+            {
+              "leftValue": "={{ $json.raw_text }}",
+              "rightValue": "rejected",
+              "operator": { "type": "string", "operation": "contains" }
+            },
+            {
+              "leftValue": "={{ $json.raw_text }}",
+              "rightValue": "delayed",
+              "operator": { "type": "string", "operation": "contains" }
+            }
+          ]
+        }
+      },
+      "id": "filter-keywords",
+      "name": "Filter: Is Escalation?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [920, 300]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "call-processing",
+      "name": "Send to Processing Workflow",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1,
+      "position": [1140, 260]
+    }
+  ],
+  "connections": {
+    "Slack Trigger": { "main": [[{ "node": "Normalize Slack", "type": "main", "index": 0 }]] },
+    "Gmail Trigger": { "main": [[{ "node": "Normalize Email", "type": "main", "index": 0 }]] },
+    "Webhook (WhatsApp/Dashboard)": { "main": [[{ "node": "Normalize Webhook", "type": "main", "index": 0 }]] },
+    "Normalize Slack": { "main": [[{ "node": "Merge All Sources", "type": "main", "index": 0 }]] },
+    "Normalize Email": { "main": [[{ "node": "Merge All Sources", "type": "main", "index": 0 }]] },
+    "Normalize Webhook": { "main": [[{ "node": "Merge All Sources", "type": "main", "index": 0 }]] },
+    "Merge All Sources": { "main": [[{ "node": "Filter: Is Escalation?", "type": "main", "index": 0 }]] },
+    "Filter: Is Escalation?": { "main": [[{ "node": "Send to Processing Workflow", "type": "main", "index": 0 }], []] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": [{ "name": "Plum Escalation" }]
+}
