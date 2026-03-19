@@ -4,17 +4,17 @@ import { useState } from "react";
 import type { Escalation, Priority, Status, Source } from "@/lib/data";
 
 const priorityColors: Record<Priority, string> = {
-  Critical: "bg-red-100 text-red-800",
-  High: "bg-orange-100 text-orange-800",
-  Medium: "bg-yellow-100 text-yellow-800",
-  Low: "bg-green-100 text-green-800",
+  Critical: "bg-[#FCE4EC] text-[#E91E63]",
+  High: "bg-[#FFF3E0] text-[#F57C00]",
+  Medium: "bg-[#FFF8E1] text-[#F9A825]",
+  Low: "bg-[#E8F5E9] text-[#66BB6A]",
 };
 
 const statusColors: Record<Status, string> = {
-  Open: "bg-blue-100 text-blue-800",
-  "In Progress": "bg-purple-100 text-purple-800",
-  Blocked: "bg-red-100 text-red-800",
-  Closed: "bg-gray-100 text-gray-600",
+  Open: "bg-[#EDE7F6] text-[#5E35B1]",
+  "In Progress": "bg-[#E8EAF6] text-[#7C4DFF]",
+  Blocked: "bg-[#FCE4EC] text-[#E91E63]",
+  Closed: "bg-gray-100 text-gray-500",
 };
 
 const sourceIcons: Record<Source, string> = {
@@ -103,7 +103,8 @@ export default function EscalationTable({ data }: EscalationTableProps) {
           placeholder="Search escalations..."
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5E35B1] focus:border-[#5E35B1]"
+          style={{ borderColor: "var(--plum-border)" }}
         />
         <select value={filterPriority} onChange={(e) => { setFilterPriority(e.target.value as Priority | "All"); setPage(1); }} className="rounded-lg border border-gray-300 px-3 py-2 text-sm">
           <option value="All">All Priorities</option>
@@ -129,9 +130,9 @@ export default function EscalationTable({ data }: EscalationTableProps) {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-        <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50">
+      <div className="overflow-x-auto rounded-xl bg-white shadow-sm" style={{ border: "1px solid var(--plum-border)" }}>
+        <table className="min-w-full divide-y text-sm" style={{ borderColor: "var(--plum-border)" }}>
+          <thead style={{ backgroundColor: "var(--plum-lighter, #F5F0FF)" }}>
             <tr>
               <th className="px-4 py-3 text-left font-medium text-gray-500">ID</th>
               <th className="px-4 py-3 text-left font-medium text-gray-500">Source</th>
@@ -155,7 +156,7 @@ export default function EscalationTable({ data }: EscalationTableProps) {
             {paginated.map((e) => (
               <tr
                 key={e.id}
-                className={`cursor-pointer hover:bg-gray-50 ${e.isBreachingSLA && e.status !== "Closed" ? "bg-red-50/50" : ""}`}
+                className={`cursor-pointer hover:bg-[#F5F0FF] ${e.isBreachingSLA && e.status !== "Closed" ? "bg-[#FCE4EC]/30" : ""}`}
                 onClick={() => setSelectedEscalation(e)}
               >
                 <td className="px-4 py-3 font-mono text-xs text-gray-500">{e.id}</td>
@@ -223,7 +224,7 @@ export default function EscalationTable({ data }: EscalationTableProps) {
               <Badge text={selectedEscalation.priority} className={priorityColors[selectedEscalation.priority]} />
               <Badge text={selectedEscalation.status} className={statusColors[selectedEscalation.status]} />
               <Badge text={selectedEscalation.source} className="bg-gray-100 text-gray-700" />
-              <Badge text={selectedEscalation.actionNeeded} className="bg-indigo-100 text-indigo-700" />
+              <Badge text={selectedEscalation.actionNeeded} className="bg-[#EDE7F6] text-[#5E35B1]" />
               {selectedEscalation.isBreachingSLA && selectedEscalation.status !== "Closed" && (
                 <Badge text="SLA BREACHED" className="bg-red-600 text-white" />
               )}

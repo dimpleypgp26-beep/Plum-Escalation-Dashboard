@@ -1,1 +1,38 @@
 @import "tailwindcss";
+
+:root {
+  --plum-purple: #5E35B1;
+  --plum-deep: #4527A0;
+  --plum-darker: #311B92;
+  --plum-light: #EDE7F6;
+  --plum-lighter: #F5F0FF;
+  --plum-pink: #E91E63;
+  --plum-pink-light: #FCE4EC;
+  --plum-accent: #7C4DFF;
+  --plum-text: #1A1A2E;
+  --plum-text-secondary: #4A4A6A;
+  --plum-bg: #F8F6FF;
+  --plum-card: #FFFFFF;
+  --plum-border: #E8E0F0;
+}
+
+body {
+  background-color: var(--plum-bg);
+  color: var(--plum-text);
+}
+
+/* Plum branded scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--plum-light);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--plum-purple);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--plum-deep);
+}

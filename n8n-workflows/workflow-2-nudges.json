@@ -1,0 +1,94 @@
+{
+  "name": "Plum - Workflow 2: SLA Nudges",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "hours", "hoursInterval": 1 }] }
+      },
+      "id": "c1000001-0000-0000-0000-000000000001",
+      "name": "Every 1 Hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": { "__rl": true, "value": "", "mode": "list" },
+        "sheetName": { "__rl": true, "value": "Sheet1", "mode": "list" },
+        "options": {}
+      },
+      "id": "c1000001-0000-0000-0000-000000000002",
+      "name": "Fetch Escalations",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": false },
+          "combinator": "and",
+          "conditions": [
+            { "leftValue": "={{ $json.status }}", "rightValue": "Closed", "operator": { "type": "string", "operation": "notEquals" } }
+          ]
+        }
+      },
+      "id": "c1000001-0000-0000-0000-000000000003",
+      "name": "Filter Not Closed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date();\nconst created = new Date($json.created_at);\nconst sla = new Date($json.sla_deadline);\nconst hoursOpen = Math.round((now - created) / 3600000);\nconst breached = now > sla;\nlet level = 'normal';\nif (breached && hoursOpen > 72) level = 'critical';\nelse if (breached) level = 'breached';\nelse if (Math.round((sla - now) / 3600000) < 4) level = 'warning';\nreturn [{ json: { ...$json, hours_open: hoursOpen, is_breached: breached, level } }];"
+      },
+      "id": "c1000001-0000-0000-0000-000000000004",
+      "name": "Calculate SLA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "or",
+          "conditions": [
+            { "leftValue": "={{ $json.level }}", "rightValue": "critical", "operator": { "type": "string", "operation": "equals" } },
+            { "leftValue": "={{ $json.level }}", "rightValue": "breached", "operator": { "type": "string", "operation": "equals" } },
+            { "leftValue": "={{ $json.level }}", "rightValue": "warning", "operator": { "type": "string", "operation": "equals" } }
+          ]
+        }
+      },
+      "id": "c1000001-0000-0000-0000-000000000005",
+      "name": "Needs Nudge",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://plum-escalation-dashboard.vercel.app/api/escalations",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ title: 'SLA Nudge: ' + $json.id, summary: 'Escalation ' + $json.id + ' open for ' + $json.hours_open + 'h. Level: ' + $json.level + '. Owner: ' + $json.owner, accountName: $json.account_name, source: 'System', senderName: 'SLA Bot' }) }}",
+        "options": {}
+      },
+      "id": "c1000001-0000-0000-0000-000000000006",
+      "name": "Send Nudge",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1360, 260]
+    }
+  ],
+  "connections": {
+    "Every 1 Hour": { "main": [[ { "node": "Fetch Escalations", "type": "main", "index": 0 } ]] },
+    "Fetch Escalations": { "main": [[ { "node": "Filter Not Closed", "type": "main", "index": 0 } ]] },
+    "Filter Not Closed": { "main": [[ { "node": "Calculate SLA", "type": "main", "index": 0 } ], [] ] },
+    "Calculate SLA": { "main": [[ { "node": "Needs Nudge", "type": "main", "index": 0 } ]] },
+    "Needs Nudge": { "main": [[ { "node": "Send Nudge", "type": "main", "index": 0 } ], [] ] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

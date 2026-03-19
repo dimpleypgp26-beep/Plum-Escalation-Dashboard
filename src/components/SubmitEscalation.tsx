@@ -160,7 +160,7 @@ export default function SubmitEscalation() {
             <button
               key={idx}
               onClick={() => loadSample(idx)}
-              className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-indigo-50 hover:border-indigo-300 hover:text-indigo-700 transition-colors"
+              className="rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-[#EDE7F6] hover:border-[#5E35B1]/40 hover:text-[#5E35B1] transition-colors"
             >
               {sample.label}
             </button>
@@ -180,7 +180,7 @@ export default function SubmitEscalation() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={5}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5E35B1] focus:outline-none focus:ring-1 focus:ring-[#5E35B1]"
                 placeholder="Paste the escalation email/message here..."
               />
             </div>
@@ -192,7 +192,7 @@ export default function SubmitEscalation() {
                   type="text"
                   value={senderName}
                   onChange={(e) => setSenderName(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5E35B1] focus:outline-none focus:ring-1 focus:ring-[#5E35B1]"
                   placeholder="Rahul Sharma"
                 />
               </div>
@@ -202,7 +202,7 @@ export default function SubmitEscalation() {
                   type="email"
                   value={senderEmail}
                   onChange={(e) => setSenderEmail(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5E35B1] focus:outline-none focus:ring-1 focus:ring-[#5E35B1]"
                   placeholder="rahul@company.com"
                 />
               </div>
@@ -227,7 +227,7 @@ export default function SubmitEscalation() {
                   type="text"
                   value={accountName}
                   onChange={(e) => setAccountName(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#5E35B1] focus:outline-none focus:ring-1 focus:ring-[#5E35B1]"
                   placeholder="Company Ltd"
                 />
               </div>
@@ -255,7 +255,7 @@ export default function SubmitEscalation() {
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full rounded-lg bg-[#5E35B1] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#4527A0] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -290,7 +290,7 @@ export default function SubmitEscalation() {
           {loading && (
             <div className="flex h-64 items-center justify-center">
               <div className="text-center">
-                <svg className="mx-auto h-10 w-10 animate-spin text-indigo-600" fill="none" viewBox="0 0 24 24">
+                <svg className="mx-auto h-10 w-10 animate-spin text-[#5E35B1]" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
@@ -381,14 +381,14 @@ export default function SubmitEscalation() {
               </div>
 
               {/* Final Record */}
-              <div className="mt-4 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
-                <p className="text-xs font-semibold text-indigo-700 mb-2">Created Escalation Record</p>
+              <div className="mt-4 rounded-lg border border-[#5E35B1]/30 bg-[#EDE7F6] p-4">
+                <p className="text-xs font-semibold text-[#5E35B1] mb-2">Created Escalation Record</p>
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div><span className="text-indigo-500">ID:</span> <span className="font-mono font-medium">{result.escalation.id}</span></div>
-                  <div><span className="text-indigo-500">Title:</span> {result.escalation.title}</div>
-                  <div><span className="text-indigo-500">Priority:</span> {result.escalation.priority} ({result.escalation.priorityScore}/100)</div>
-                  <div><span className="text-indigo-500">Owner:</span> {result.escalation.owner}</div>
-                  <div><span className="text-indigo-500">Category:</span> {result.escalation.category}</div>
+                  <div><span className="text-[#7C4DFF]">ID:</span> <span className="font-mono font-medium">{result.escalation.id}</span></div>
+                  <div><span className="text-[#7C4DFF]">Title:</span> {result.escalation.title}</div>
+                  <div><span className="text-[#7C4DFF]">Priority:</span> {result.escalation.priority} ({result.escalation.priorityScore}/100)</div>
+                  <div><span className="text-[#7C4DFF]">Owner:</span> {result.escalation.owner}</div>
+                  <div><span className="text-[#7C4DFF]">Category:</span> {result.escalation.category}</div>
                 </div>
               </div>
             </div>
@@ -401,14 +401,14 @@ export default function SubmitEscalation() {
         <h3 className="text-sm font-semibold text-gray-700 mb-4">Automation Pipeline Architecture</h3>
         <div className="flex flex-wrap items-center justify-center gap-2 text-xs">
           {[
-            { label: "Email/Slack/WhatsApp", color: "bg-blue-100 text-blue-700 border-blue-200" },
-            { label: "Webhook /api/ingest", color: "bg-purple-100 text-purple-700 border-purple-200" },
-            { label: "Escalation Filter", color: "bg-yellow-100 text-yellow-700 border-yellow-200" },
-            { label: "AI Summarization", color: "bg-green-100 text-green-700 border-green-200" },
-            { label: "Priority Scoring", color: "bg-orange-100 text-orange-700 border-orange-200" },
-            { label: "Owner Assignment", color: "bg-red-100 text-red-700 border-red-200" },
-            { label: "SLA Tracking", color: "bg-indigo-100 text-indigo-700 border-indigo-200" },
-            { label: "Dashboard", color: "bg-gray-800 text-white border-gray-700" },
+            { label: "Email/Slack/WhatsApp", color: "bg-[#EDE7F6] text-[#5E35B1] border-[#5E35B1]/20" },
+            { label: "Webhook /api/ingest", color: "bg-[#E8EAF6] text-[#7C4DFF] border-[#7C4DFF]/20" },
+            { label: "Escalation Filter", color: "bg-[#FFF8E1] text-[#F9A825] border-[#F9A825]/20" },
+            { label: "AI Summarization", color: "bg-[#E8F5E9] text-[#26A69A] border-[#26A69A]/20" },
+            { label: "Priority Scoring", color: "bg-[#FFF3E0] text-[#F57C00] border-[#F57C00]/20" },
+            { label: "Owner Assignment", color: "bg-[#FCE4EC] text-[#E91E63] border-[#E91E63]/20" },
+            { label: "SLA Tracking", color: "bg-[#EDE7F6] text-[#AB47BC] border-[#AB47BC]/20" },
+            { label: "Dashboard", color: "bg-[#311B92] text-white border-[#311B92]" },
           ].map((step, idx) => (
             <div key={idx} className="flex items-center gap-2">
               <div className={`rounded-lg border px-3 py-2 font-medium ${step.color}`}>
