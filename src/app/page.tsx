@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { escalations } from "@/lib/data";
 import MetricCard from "@/components/MetricCard";
 import EscalationTable from "@/components/EscalationTable";
+import SubmitEscalation from "@/components/SubmitEscalation";
 import {
   StatusPieChart,
   PriorityBarChart,
@@ -15,8 +16,16 @@ import {
 } from "@/components/Charts";
 
 export default function Dashboard() {
-  const [tab, setTab] = useState<"overview" | "escalations" | "analytics">("overview");
+  const [tab, setTab] = useState<"overview" | "escalations" | "automation" | "analytics">("overview");
+  const [lastSync, setLastSync] = useState("");
   const data = escalations;
+
+  useEffect(() => {
+    setLastSync(new Date().toLocaleString("en-IN", {
+      day: "numeric", month: "short", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    }));
+  }, []);
 
   // Metrics
   const total = data.length;
@@ -50,17 +59,17 @@ export default function Dashboard() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-lg font-bold text-white">P</div>
             <div>
               <h1 className="text-lg font-bold text-gray-900">Plum Escalation Dashboard</h1>
-              <p className="text-xs text-gray-400">AI-Enabled Escalation Management System</p>
+              <p className="text-xs text-gray-400">AI-Powered Escalation Management System</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-1.5 text-xs text-green-700">
-              <span className="h-2 w-2 rounded-full bg-green-500"></span>
-              n8n Connected
+              <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+              Automation Active
             </div>
             <div className="text-right text-xs text-gray-400">
-              <div>Last sync: 2 min ago</div>
-              <div>19 Mar 2026, 10:30 AM</div>
+              <div>{total} escalations tracked</div>
+              <div>{lastSync}</div>
             </div>
           </div>
         </div>
@@ -70,7 +79,7 @@ export default function Dashboard() {
       <div className="border-b border-gray-200 bg-white">
         <div className="mx-auto max-w-7xl px-6">
           <nav className="flex gap-6">
-            {(["overview", "escalations", "analytics"] as const).map((t) => (
+            {(["overview", "escalations", "automation", "analytics"] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -78,7 +87,7 @@ export default function Dashboard() {
                   tab === t ? "border-indigo-600 text-indigo-600" : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
               >
-                {t}
+                {t === "automation" ? "Automation" : t}
               </button>
             ))}
           </nav>
@@ -194,6 +203,9 @@ export default function Dashboard() {
         {/* ── ESCALATIONS TAB ── */}
         {tab === "escalations" && <EscalationTable data={data} />}
 
+        {/* ── AUTOMATION TAB ── */}
+        {tab === "automation" && <SubmitEscalation />}
+
         {/* ── ANALYTICS TAB ── */}
         {tab === "analytics" && (
           <div className="space-y-6">
@@ -234,7 +246,7 @@ export default function Dashboard() {
 
       {/* Footer */}
       <footer className="border-t border-gray-200 bg-white py-4 text-center text-xs text-gray-400">
-        Plum Escalation Management System &middot; Powered by n8n + AI &middot; Data refreshes via webhook
+        Plum Escalation Management System &middot; AI-Powered Automation &middot; Built with Next.js
       </footer>
     </div>
   );
