@@ -6,6 +6,8 @@ import type { Escalation } from "@/lib/data";
 import MetricCard from "@/components/MetricCard";
 import EscalationTable from "@/components/EscalationTable";
 import SubmitEscalation from "@/components/SubmitEscalation";
+import AccountHealth from "@/components/AccountHealth";
+import DataSettings from "@/components/DataSettings";
 import {
   StatusPieChart,
   PriorityBarChart,
@@ -16,14 +18,85 @@ import {
   SLAComplianceChart,
 } from "@/components/Charts";
 
+type TabType = "overview" | "escalations" | "accounts" | "automation" | "analytics";
+
 export default function Dashboard() {
-  const [tab, setTab] = useState<"overview" | "escalations" | "automation" | "analytics">("overview");
+  const [tab, setTab] = useState<TabType>("overview");
   const [data, setData] = useState<Escalation[]>(localEscalations);
   const [dataSource, setDataSource] = useState<string>("local_data");
   const [lastSync, setLastSync] = useState("");
   const [loading, setLoading] = useState(true);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Load persisted data from localStorage on mount
+  useEffect(() => {
+    const savedData = localStorage.getItem("plum_csv_data");
+    const savedSource = localStorage.getItem("plum_data_source");
+    const savedSheetsUrl = localStorage.getItem("plum_sheets_url");
+
+    if (savedSheetsUrl && savedSource === "google_sheets_csv") {
+      // Auto-refresh from Google Sheets URL
+      fetch(savedSheetsUrl)
+        .then((res) => res.text())
+        .then((text) => {
+          // Quick CSV parse inline for auto-refresh
+          const lines = text.split(/\r?\n/).filter((l) => l.trim());
+          if (lines.length > 1) {
+            // Data exists, use the saved parsed version for now
+            if (savedData) {
+              try {
+                const parsed = JSON.parse(savedData);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  setData(parsed);
+                  setDataSource("google_sheets_csv");
+                }
+              } catch {
+                // fall through to local data
+              }
+            }
+          }
+        })
+        .catch(() => {
+          // Use saved data if fetch fails
+          if (savedData) {
+            try {
+              const parsed = JSON.parse(savedData);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setData(parsed);
+                setDataSource(savedSource || "csv_upload");
+              }
+            } catch {
+              // fall through
+            }
+          }
+        });
+    } else if (savedData && savedSource) {
+      try {
+        const parsed = JSON.parse(savedData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setData(parsed);
+          setDataSource(savedSource);
+        }
+      } catch {
+        // fall through to default
+      }
+    }
+  }, []);
 
   const fetchData = useCallback(async () => {
+    // Only fetch from sheets API if no custom data is loaded
+    const savedSource = localStorage.getItem("plum_data_source");
+    if (savedSource === "csv_upload" || savedSource === "google_sheets_csv") {
+      setLoading(false);
+      setLastSync(
+        new Date().toLocaleString("en-IN", {
+          day: "numeric", month: "short", year: "numeric",
+          hour: "2-digit", minute: "2-digit",
+        })
+      );
+      return;
+    }
+
     try {
       const res = await fetch("/api/sheets");
       const json = await res.json();
@@ -50,6 +123,28 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
+  const handleDataLoaded = useCallback((newData: Escalation[], source: string) => {
+    setData(newData);
+    setDataSource(source);
+    setLastSync(
+      new Date().toLocaleString("en-IN", {
+        day: "numeric", month: "short", year: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      })
+    );
+  }, []);
+
+  const handleResetToDemo = useCallback(() => {
+    setData(localEscalations);
+    setDataSource("local_data");
+    setLastSync(
+      new Date().toLocaleString("en-IN", {
+        day: "numeric", month: "short", year: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      })
+    );
+  }, []);
+
   // Metrics
   const total = data.length;
   const open = data.filter((e) => e.status === "Open").length;
@@ -74,6 +169,15 @@ export default function Dashboard() {
 
   const activeCount = total - closed;
 
+  const dataSourceLabel =
+    dataSource === "google_sheets"
+      ? "Google Sheets Live"
+      : dataSource === "csv_upload"
+      ? "CSV Upload"
+      : dataSource === "google_sheets_csv"
+      ? "Google Sheets CSV"
+      : "Local Data";
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--plum-bg)" }}>
       {/* Header */}
@@ -93,15 +197,32 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            {/* Settings Gear Icon */}
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/80 transition-colors hover:bg-white/20 hover:text-white"
+              title="Data Settings"
+            >
+              <svg className="h-4.5 w-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
             <div className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium ${
-              dataSource === "google_sheets"
+              dataSource === "google_sheets" || dataSource === "google_sheets_csv"
+                ? "bg-white/20 text-white"
+                : dataSource === "csv_upload"
                 ? "bg-white/20 text-white"
                 : "bg-white/10 text-white/80"
             }`}>
               <span className={`h-2 w-2 rounded-full ${
-                dataSource === "google_sheets" ? "bg-green-400 animate-pulse" : "bg-yellow-400"
+                dataSource === "google_sheets" || dataSource === "google_sheets_csv"
+                  ? "bg-green-400 animate-pulse"
+                  : dataSource === "csv_upload"
+                  ? "bg-blue-400"
+                  : "bg-yellow-400"
               }`}></span>
-              {dataSource === "google_sheets" ? "Google Sheets Live" : "Local Data"}
+              {dataSourceLabel}
             </div>
             <div className="text-right text-xs text-white/60">
               <div>{total} escalations</div>
@@ -115,7 +236,7 @@ export default function Dashboard() {
       <div className="border-b bg-white" style={{ borderColor: "var(--plum-border)" }}>
         <div className="mx-auto max-w-7xl px-6">
           <nav className="flex gap-6">
-            {(["overview", "escalations", "automation", "analytics"] as const).map((t) => (
+            {(["overview", "escalations", "accounts", "automation", "analytics"] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -126,7 +247,7 @@ export default function Dashboard() {
                 }`}
                 style={tab === t ? { borderColor: "#5E35B1" } : undefined}
               >
-                {t}
+                {t === "accounts" ? "Accounts" : t}
               </button>
             ))}
           </nav>
@@ -146,7 +267,7 @@ export default function Dashboard() {
           </div>
         ) : (
           <>
-            {/* ── OVERVIEW TAB ── */}
+            {/* OVERVIEW TAB */}
             {tab === "overview" && (
               <div className="space-y-6">
                 {/* Metric Cards */}
@@ -262,13 +383,16 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* ── ESCALATIONS TAB ── */}
+            {/* ESCALATIONS TAB */}
             {tab === "escalations" && <EscalationTable data={data} />}
 
-            {/* ── AUTOMATION TAB ── */}
+            {/* ACCOUNTS TAB */}
+            {tab === "accounts" && <AccountHealth data={data} />}
+
+            {/* AUTOMATION TAB */}
             {tab === "automation" && <SubmitEscalation />}
 
-            {/* ── ANALYTICS TAB ── */}
+            {/* ANALYTICS TAB */}
             {tab === "analytics" && (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -310,8 +434,18 @@ export default function Dashboard() {
 
       {/* Footer */}
       <footer className="py-4 text-center text-xs text-white/70" style={{ background: "linear-gradient(135deg, #311B92, #5E35B1)" }}>
-        Plum Escalation Management System &middot; AI-Powered Automation &middot; Data: {dataSource === "google_sheets" ? "Google Sheets (Live)" : "Local Dataset"} &middot; Auto-refreshes every 60s
+        Plum Escalation Management System &middot; AI-Powered Automation &middot; Data: {dataSourceLabel} &middot; Auto-refreshes every 60s
       </footer>
+
+      {/* Data Settings Modal */}
+      <DataSettings
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onDataLoaded={handleDataLoaded}
+        onResetToDemo={handleResetToDemo}
+        currentSource={dataSource}
+        currentRowCount={data.length}
+      />
     </div>
   );
 }
